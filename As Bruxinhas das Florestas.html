@@ -582,7 +582,10 @@
     const rows = Math.ceil(lvl.questions.length / cols);
     const marginX = Math.max(100, Math.min(220, window.innerWidth * 0.18));
     const marginY = Math.max(120, Math.min(260, window.innerHeight * 0.22));
-    const availableWidth = Math.max(window.innerWidth - marginX * 2, 0);
+    const witchMaxX = Math.max(0, window.innerWidth - 160);
+    const minX = Math.min(marginX, witchMaxX);
+    const maxX = Math.max(minX, Math.min(window.innerWidth - marginX, witchMaxX));
+    const availableWidth = Math.max(maxX - minX, 0);
     const availableHeight = Math.max(window.innerHeight - marginY * 2, 0);
     const colSpacing = cols > 1 ? availableWidth / (cols - 1) : 0;
     const rowSpacing = rows > 1 ? availableHeight / (rows - 1) : 0;
@@ -596,7 +599,7 @@
         const col = i % cols;
         const row = Math.floor(i / cols);
         return {
-          x: marginX + col * colSpacing,
+          x: minX + col * colSpacing,
           y: marginY + row * rowSpacing,
           question: q,
           index: i
