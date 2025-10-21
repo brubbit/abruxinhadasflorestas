@@ -46,8 +46,8 @@
       }
 
       .menu-hero {
-        width: min(280px, 60vw);
-        max-width: 320px;
+        width: min(240px, 55vw);
+        max-width: 280px;
         margin-bottom: 18px;
         filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
       }
@@ -57,6 +57,21 @@
         height: auto;
         display: block;
         image-rendering: pixelated;
+        animation: menuHeroFloat 4.5s ease-in-out infinite;
+      }
+
+      @keyframes menuHeroFloat {
+        0% {
+          transform: translateY(0);
+        }
+
+        50% {
+          transform: translateY(-14px);
+        }
+
+        100% {
+          transform: translateY(0);
+        }
       }
 
       .title {
@@ -278,7 +293,7 @@
         }
 
         .menu-hero {
-          width: min(220px, 70vw);
+          width: min(200px, 65vw);
           margin-bottom: 16px;
         }
 
