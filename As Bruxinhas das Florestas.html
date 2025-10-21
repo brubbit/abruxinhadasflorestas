@@ -45,6 +45,35 @@
         box-sizing: border-box;
       }
 
+      .menu-hero {
+        width: min(240px, 55vw);
+        max-width: 280px;
+        margin-bottom: 18px;
+        filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
+      }
+
+      .menu-hero img {
+        width: 100%;
+        height: auto;
+        display: block;
+        image-rendering: pixelated;
+        animation: menuHeroFloat 4.5s ease-in-out infinite;
+      }
+
+      @keyframes menuHeroFloat {
+        0% {
+          transform: translateY(0);
+        }
+
+        50% {
+          transform: translateY(-14px);
+        }
+
+        100% {
+          transform: translateY(0);
+        }
+      }
+
       .title {
         text-align: center;
         color: #d4af37;
@@ -81,9 +110,14 @@
         gap: 4px;
         min-height: 72px;
         justify-content: center;
-        align-items: flex-start;
+        align-items: center;
+        text-align: center;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
+      }
+
+      .levels-grid .level-btn:nth-child(10) {
+        grid-column: 2;
       }
 
       .hint {
@@ -254,6 +288,15 @@
           gap: 10px;
         }
 
+        .levels-grid .level-btn:nth-child(10) {
+          grid-column: auto;
+        }
+
+        .menu-hero {
+          width: min(200px, 65vw);
+          margin-bottom: 16px;
+        }
+
         .witch {
           width: 140px;
           height: 140px;
@@ -279,7 +322,102 @@
     <div id="app" class="screen"></div>
 
     <script>
-      (function () {
+  (function () {
+  const menuHeroImage = "https://i.ibb.co/8mbGvyW/bruxinha-flutuando.gif";
+  const ambientMusicVideoId = "s0mx_YrjY58";
+  const ambientMusicVolume = 12;
+  let ambientPlayer = null;
+  let ambientPlayerReady = false;
+  let ambientPlayQueued = false;
+  let audioUnlockListenersActive = true;
+
+  function ensureAmbientMusicContainer() {
+    if (document.getElementById("ambient-music-player")) return;
+    const holder = document.createElement("div");
+    holder.id = "ambient-music-player";
+    holder.style.position = "fixed";
+    holder.style.width = "1px";
+    holder.style.height = "1px";
+    holder.style.opacity = "0.01";
+    holder.style.pointerEvents = "none";
+    holder.style.zIndex = "-1";
+    holder.setAttribute("aria-hidden", "true");
+    if (document.body) {
+      document.body.appendChild(holder);
+    } else {
+      document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+          if (!document.getElementById("ambient-music-player")) {
+            document.body.appendChild(holder);
+          }
+        },
+        { once: true }
+      );
+    }
+  }
+
+  function loadYouTubeAPI() {
+    if (document.getElementById("youtube-iframe-api")) return;
+    const script = document.createElement("script");
+    script.id = "youtube-iframe-api";
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    document.head.appendChild(script);
+  }
+
+  function tryStartAmbient() {
+    if (!ambientPlayer || !ambientPlayerReady) {
+      ambientPlayQueued = true;
+      return;
+    }
+    ambientPlayQueued = false;
+    ambientPlayer.setVolume(ambientMusicVolume);
+    if (typeof ambientPlayer.unMute === "function") ambientPlayer.unMute();
+    ambientPlayer.playVideo();
+  }
+
+  function detachAudioUnlockers() {
+    if (!audioUnlockListenersActive) return;
+    window.removeEventListener("pointerdown", resumeAudio);
+    window.removeEventListener("touchstart", resumeAudio);
+    audioUnlockListenersActive = false;
+  }
+
+  loadYouTubeAPI();
+
+  window.onYouTubeIframeAPIReady = function () {
+    ensureAmbientMusicContainer();
+    ambientPlayer = new YT.Player("ambient-music-player", {
+      height: "1",
+      width: "1",
+      videoId: ambientMusicVideoId,
+      playerVars: {
+        autoplay: 0,
+        controls: 0,
+        disablekb: 1,
+        loop: 1,
+        modestbranding: 1,
+        playsinline: 1,
+        playlist: ambientMusicVideoId
+      },
+      events: {
+        onReady: function (event) {
+          ambientPlayerReady = true;
+          event.target.setVolume(ambientMusicVolume);
+          if (ambientPlayQueued) tryStartAmbient();
+        },
+        onStateChange: function (event) {
+          if (event.data === YT.PlayerState.PLAYING) {
+            event.target.setVolume(ambientMusicVolume);
+            detachAudioUnlockers();
+          } else if (event.data === YT.PlayerState.ENDED) {
+            event.target.playVideo();
+          }
+        }
+      }
+    });
+  };
   const witchImages = [
     "https://i.postimg.cc/XNQdg2SZ/brubruxinha.png",
     "https://i.postimg.cc/nV0B1dbH/2.png",
@@ -300,7 +438,7 @@
       subtitle: "Global",
       color: "#8B4789",
       cauldronColor: "#9b59b6",
-      bgImage: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1920&q=80",
+      bgImage: "https://i.ibb.co/8ntNYcqy/d8de04d0-5129-40ab-b781-d68b370ebe48.png",
       witchSprite: 0,
       questions: [
         { q: "Objetivo da Inquisição?", options: ["Cobrar impostos", "Eliminar heresias", "Educação", "População"], correct: 1 },
@@ -326,7 +464,7 @@
       subtitle: "Conexão Natureza",
       color: "#2d5016",
       cauldronColor: "#27ae60",
-      bgImage: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=80",
+      bgImage: "https://i.ibb.co/d4MzX9vL/28810381-4a46-45aa-ad4a-e9cf93a77331.png",
       witchSprite: 1,
       questions: [
         { q: "Princípio básico:", options: ["Ciclos naturais", "Tecnologia", "Isolamento", "Rejeição"], correct: 0 },
@@ -352,7 +490,7 @@
       subtitle: "Ferramentas",
       color: "#c44569",
       cauldronColor: "#ff6b9d",
-      bgImage: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80",
+      bgImage: "https://i.ibb.co/j91dPcG3/59e6fc55-6886-4118-a8db-ace5d2484612.png",
       witchSprite: 2,
       questions: [
         { q: "Grimório é:", options: ["Livro magia", "Romance", "Diário", "Agenda"], correct: 0 },
@@ -379,7 +517,7 @@
       subtitle: "Energia e Propósito",
       color: "#f9ca24",
       cauldronColor: "#f6e58d",
-      bgImage: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1920&q=80",
+      bgImage: "https://i.ibb.co/xSZvQtV5/71eb6336-93b7-4beb-92fc-fe614c8c671b.png",
       witchSprite: 3,
       questions: [
         { q: "Quartzo rosa usado:", options: ["Amor", "Proteção", "Dinheiro", "Estudo"], correct: 0 },
@@ -405,7 +543,7 @@
       subtitle: "Sabbats Estações",
       color: "#ff7f50",
       cauldronColor: "#ffa07a",
-      bgImage: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=1920&q=80",
+      bgImage: "https://i.ibb.co/5gX6wpgj/0133a247-1757-467a-b8de-2c13cc882c59.png",
       witchSprite: 4,
       questions: [
         { q: "Samhain ocorre:", options: ["31 outubro", "21 junho", "1 maio", "25 dezembro"], correct: 0 },
@@ -431,7 +569,7 @@
       subtitle: "Energia Lunar",
       color: "#1e90ff",
       cauldronColor: "#87cefa",
-      bgImage: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=1920&q=80",
+      bgImage: "https://i.ibb.co/211C1jFt/a899d3f1-56ab-499c-a7a7-9b25f70d3a5d.png",
       witchSprite: 5,
       questions: [
         { q: "Lua nova ideal:", options: ["Novos começos", "Colheita", "Banimento", "Proteção"], correct: 0 },
@@ -457,7 +595,7 @@
       subtitle: "Oráculos Símbolos",
       color: "#8b0000",
       cauldronColor: "#ff4500",
-      bgImage: "https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?w=1920&q=80",
+      bgImage: "https://i.ibb.co/tTk3Gq3M/9102659f-129b-4889-ba40-df4796aa8d74.png",
       witchSprite: 6,
       questions: [
         { q: "Runas vêm:", options: ["Alfabeto antigo", "China", "Egito", "Japão"], correct: 0 },
@@ -484,7 +622,7 @@
       subtitle: "Plantas Mágicas",
       color: "#228b22",
       cauldronColor: "#32cd32",
-      bgImage: "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=1920&q=80",
+      bgImage: "https://i.ibb.co/C5khQkQx/c465d2cc-1668-4ca2-8dbe-984b2e829024.png",
       witchSprite: 7,
       questions: [
         { q: "Manjericão atrai:", options: ["Proteção sorte", "Tristeza", "Fome", "Sonhos"], correct: 0 },
@@ -510,7 +648,7 @@
       subtitle: "Energia",
       color: "#6a5acd",
       cauldronColor: "#9370db",
-      bgImage: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1920&q=80",
+      bgImage: "https://i.ibb.co/bMgj5y2t/42735ee9-8414-460c-b28f-6767e60edb51.png",
       witchSprite: 8,
       questions: [
         { q: "Corpo astral:", options: ["Corpo energético", "Corpo físico", "Mental", "Imaginário"], correct: 0 },
@@ -536,7 +674,7 @@
       subtitle: "Rituais",
       color: "#9400d3",
       cauldronColor: "#ba55d3",
-      bgImage: "https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?w=1920&q=80",
+      bgImage: "https://i.ibb.co/ZzKxsRnh/10380aab-cee0-44ed-b5fe-cde1b17285d1.png",
       witchSprite: 9,
       questions: [
         { q: "Fase banimentos:", options: ["Lua minguante", "Lua cheia", "Lua nova", "Crescente"], correct: 0 },
@@ -681,6 +819,11 @@
     const container = document.createElement("div");
     container.className = "menu-center";
 
+    const hero = document.createElement("div");
+    hero.className = "menu-hero";
+    hero.innerHTML = `<img src="${menuHeroImage}" alt="Bruxinha flutuando" />`;
+    container.appendChild(hero);
+
     const title = document.createElement("h1");
     title.className = "title";
     title.style.fontSize = "28px";
@@ -772,7 +915,7 @@
       const el = document.createElement("div");
       el.className = "cauldron";
       el.dataset.index = c.index;
-      el.style.left = c.x - state.witchPos.x + window.innerWidth / 2 + "px";
+      el.style.left = c.x + "px";
       el.style.top = c.y + "px";
 
       if (!state.answeredCauldrons.includes(c.index)) {
@@ -880,22 +1023,31 @@
     // Atualiza posição dos caldeirões
     state.cauldrons.forEach((c) => {
       if (c._el) {
-        c._el.style.left = c.x - state.witchPos.x + window.innerWidth / 2 + "px";
+        c._el.style.left = c.x + "px";
         c._el.style.top = c.y + "px";
       }
     });
 
     // Detecta colisão com caldeirão
-    if (state.gameState === "playing" && !state.currentQuestion) {
-      state.cauldrons.forEach((c) => {
-        if (!state.answeredCauldrons.includes(c.index)) {
-          const d = dist(state.witchPos.x, state.witchPos.y, c.x, c.y);
-          if (d < 50) {
-            state.currentQuestion = c;
-            renderQuestionOverlay(c);
-          }
+    if (state.gameState === "playing" && !state.currentQuestion && witchEl) {
+      const witchRect = witchEl.getBoundingClientRect();
+      const witchCenterX = witchRect.left + witchRect.width / 2;
+      const witchCenterY = witchRect.top + witchRect.height / 2;
+
+      for (const c of state.cauldrons) {
+        if (state.answeredCauldrons.includes(c.index) || !c._el) continue;
+
+        const rect = c._el.getBoundingClientRect();
+        const cauldronCenterX = rect.left + rect.width / 2;
+        const cauldronCenterY = rect.top + rect.height / 2;
+        const triggerRadius = Math.max(rect.width, rect.height) * 0.6;
+
+        if (dist(witchCenterX, witchCenterY, cauldronCenterX, cauldronCenterY) < triggerRadius) {
+          state.currentQuestion = c;
+          renderQuestionOverlay(c);
+          break;
         }
-      });
+      }
     }
 
     // Atualiza HUD
@@ -1102,8 +1254,7 @@
     if (audioCtx && audioCtx.state === "suspended") {
       audioCtx.resume().catch(() => {});
     }
-    window.removeEventListener("pointerdown", resumeAudio);
-    window.removeEventListener("touchstart", resumeAudio);
+    tryStartAmbient();
   }
 
   window.addEventListener("pointerdown", resumeAudio);

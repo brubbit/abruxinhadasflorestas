@@ -95,9 +95,14 @@
         gap: 4px;
         min-height: 72px;
         justify-content: center;
-        align-items: flex-start;
+        align-items: center;
+        text-align: center;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
+      }
+
+      .levels-grid .level-btn:nth-child(10) {
+        grid-column: 2;
       }
 
       .hint {
@@ -1136,8 +1141,7 @@
     if (audioCtx && audioCtx.state === "suspended") {
       audioCtx.resume().catch(() => {});
     }
-    window.removeEventListener("pointerdown", resumeAudio);
-    window.removeEventListener("touchstart", resumeAudio);
+    tryStartAmbient();
   }
 
   window.addEventListener("pointerdown", resumeAudio);
