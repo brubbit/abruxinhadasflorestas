@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>A Bruxinha das Florestas — Quiz</title>
+  <style>
+    :root{
+      --ui-radius:16px;
+      --glass: rgba(0,0,0,0.5);
+      --menu-bg: linear-gradient(180deg, #1a0033 0%, #2d1b4e 50%, #1a0033 100%);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--menu-bg);
+      color:#fff;
+      -webkit-touch-callout:none;
+      -webkit-user-select:none;
+      user-select:none;
+      overscroll-behavior: none;
+    }
+
+    /* Mobile-first layout */
+    .screen {
+      width:100%;
+      height:100vh;
+      position:relative;
+      overflow:hidden;
+      touch-action:none;
+    }
+
+    /* MENU */
+    .menu-center{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      height:100%;
+      padding:18px;
+      box-sizing:border-box;
+    }
+
+    .title {
+      text-align:center;
+      color:#d4af37;
+      font-family:serif;
+      text-shadow:0 0 20px rgba(212,175,55,0.5);
+      margin:0 0 8px 0;
+      font-weight:700;
+    }
+    .subtitle {
+      color:#e0c9ff;
+      margin:0 0 16px 0;
+      opacity:0.95;
+    }
+
+    .levels-grid {
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      max-width:920px;
+      margin:8px 0;
+    }
+
+    .level-btn{
+      padding:12px;
+      border-radius:12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      border:2px solid rgba(255,255,255,0.12);
+      color:#fff;
+      font-weight:700;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-height:72px;
+      justify-content:center;
+      align-items:flex-start;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .hint {
+      margin-top:12px;
+      text-align:center;
+      color: rgba(255,255,255,0.85);
+      font-size:13px;
+      opacity:0.85;
+    }
+
+    /* GAME UI */
+    .hud {
+      position:absolute;
+      left:10px;
+      top:10px;
+      z-index:80;
+      background:rgba(0,0,0,0.45);
+      padding:10px;
+      border-radius:12px;
+      backdrop-filter: blur(4px);
+      min-width:140px;
+    }
+    .hud .title { font-family:inherit; font-size:16px; color:#fff; text-shadow:none; margin:0 0 4px 0;}
+    .menu-btn {
+      position:absolute;
+      right:10px;
+      top:10px;
+      z-index:81;
+      background:#ff6b6b;
+      border-radius:10px;
+      padding:8px 10px;
+      color:#fff;
+      font-weight:700;
+      border:none;
+      box-shadow:0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    /* Witch sprite */
+    .witch {
+      position:absolute;
+      width:160px;
+      height:160px;
+      z-index:70;
+      pointer-events:none;
+      will-change:transform, left, top;
+      image-rendering: pixelated;
+      transform-origin:center;
+    }
+    .witch .img {
+      width:100%;
+      height:100%;
+      background-size:contain;
+      background-repeat:no-repeat;
+      background-position:center;
+      filter: drop-shadow(0 8px 20px rgba(0,0,0,0.45));
+    }
+
+    /* Cauldrons */
+    .cauldron {
+      position:absolute;
+      width:64px;
+      height:64px;
+      transform:translate(-50%,-50%);
+      text-align:center;
+      font-size:36px;
+      z-index:40;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+    }
+
+    /* Question overlay */
+    .overlay {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.85);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:120;
+      padding:18px;
+      box-sizing:border-box;
+    }
+
+    .card {
+      width:100%;
+      max-width:720px;
+      border-radius:20px;
+      padding:16px;
+      box-sizing:border-box;
+      background:#5b2a6d;
+      box-shadow:0 0 50px rgba(0,0,0,0.6);
+      color:white;
+    }
+    .card h2 { margin:0 0 12px 0; font-size:18px; text-align:center; }
+    .options-grid {
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    .opt-btn {
+      background:rgba(255,255,255,0.12);
+      border:none;
+      padding:12px;
+      border-radius:12px;
+      color:white;
+      text-align:left;
+      font-weight:700;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    /* feedback screens */
+    .feedback {
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:130;
+      background:rgba(0,0,0,0.9);
+      color:white;
+      text-align:center;
+      padding:18px;
+      box-sizing:border-box;
+    }
+
+    .victory-card {
+      width:100%;
+      max-width:600px;
+      background:rgba(80,0,120,0.95);
+      padding:18px;
+      border-radius:18px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    /* small screens tweaks */
+    @media (max-width:520px){
+      .levels-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+      .witch { width:140px; height:140px; }
+      .cauldron { font-size:30px; width:56px; height:56px; }
+      .card h2 { font-size:16px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="screen"></div>
+
+  <script>
+  /***********************
+   * Witch Quiz — Vanilla JS single-file
+   * Tradução e adaptação do código React fornecido.
+   ***********************/
+
+  (function(){
+    // --- Data (copiado do seu código React) ---
+    const witchImages = [
+      "https://i.postimg.cc/XNQdg2SZ/brubruxinha.png",
+      "https://i.postimg.cc/nV0B1dbH/2.png",
+      "https://i.postimg.cc/VsDnF7Q6/3.png",
+      "https://i.postimg.cc/05cDCtRj/3ba76f4a-5fc4-4d40-bb6b-2793edc041b1.png",
+      "https://i.postimg.cc/8cKvPCBb/4.png",
+      "https://i.postimg.cc/ZYVpLfth/5.png",
+      "https://i.postimg.cc/mZ8CSdfs/6.png",
+      "https://i.postimg.cc/L4NLVyKS/7.png",
+      "https://i.postimg.cc/SQDCGZFN/a59aa63f-f732-4ce8-94da-a345737a37cd.png",
+      "https://i.postimg.cc/XNQdg2S3/1.png"
+    ];
+
+    const levels = [
+  { id: 1, name: "História da Bruxaria", subtitle: "Global", color: "#8B4789", cauldronColor: "#9b59b6", bg: "linear-gradient(180deg, #1a1a2e 0%, #0f3460 50%, #16213e 100%)", witchSprite: 0, questions: [
+    { q: "Objetivo da Inquisição?", options: ["Cobrar impostos", "Eliminar heresias ✅", "Educação", "População"], correct: 1 },
+    { q: "Práticas na África:", options: ["Curandeirismo ancestral ✅", "Agricultura", "Comércio", "Guerra"], correct: 0 },
+    { q: "O que eram aquelarres?", options: ["Mercados", "Reuniões bruxas ✅", "Igrejas", "Castelos"], correct: 1 },
+    { q: "Sincretismo bruxaria:", options: ["Chile", "México ✅", "Argentina", "Uruguai"], correct: 1 },
+    { q: "Malleus Maleficarum:", options: ["Livro feitiços", "Manual caça bruxas ✅", "Tratado médico", "Romance"], correct: 1 },
+    { q: "Salem, século:", options: ["XVII ✅", "XV", "XIX", "XX"], correct: 0 },
+    { q: "Curandeirismo por:", options: ["Mulheres sábias ✅", "Soldados", "Comerciantes", "Nobres"], correct: 0 },
+    { q: "Divindade africana:", options: ["Zeus", "Exu/Elegbara ✅", "Thor", "Apolo"], correct: 1 },
+    { q: "Caça intensa:", options: ["Séculos XV-XVII ✅", "Século X", "Século XX", "Antiga"], correct: 0 },
+    { q: "Acusadas América:", options: ["Homens ricos", "Mulheres independentes ✅", "Crianças", "Governadores"], correct: 1 },
+    { q: "Benandanti:", options: ["Bruxos benignos ✅", "Padres", "Soldados", "Mercadores"], correct: 0 },
+    { q: "Iyami Aje:", options: ["Agricultoras", "Anciãs espirituais ✅", "Comerciantes", "Guerreiras"], correct: 1 },
+    { q: "Familiares eram:", options: ["Animais auxiliares ✅", "Parentes", "Vizinhos", "Inimigos"], correct: 0 },
+    { q: "Planta bruxas:", options: ["Girassol", "Beladona ✅", "Rosa", "Margarida"], correct: 1 },
+    { q: "Última execução:", options: ["Século XVIII ✅", "Século XV", "Século XXI", "Século X"], correct: 0 }
+  ]},
+
+  { id: 2, name: "Bruxaria Natural", subtitle: "Conexão Natureza", color: "#2d5016", cauldronColor: "#27ae60", bg: "linear-gradient(180deg, #1e4620 0%, #2d5016 50%, #1a3a1f 100%)", witchSprite: 1, questions: [
+    { q: "Princípio básico:", options: ["Ciclos naturais ✅", "Tecnologia", "Isolamento", "Rejeição"], correct: 0 },
+    { q: "Trabalhar estações:", options: ["Alinhar ciclos ✅", "Observar clima", "Ignorar", "Controlar"], correct: 0 },
+    { q: "Elemento terra:", options: ["Estabilidade ✅", "Emoções", "Comunicação", "Paixão"], correct: 0 },
+    { q: "Correspondências:", options: ["Relações naturais ✅", "Cartas", "Mensagens", "Conflitos"], correct: 0 },
+    { q: "Lua manifestação:", options: ["Crescente/Cheia ✅", "Nova", "Minguante", "Qualquer"], correct: 0 },
+    { q: "Jardim bruxa:", options: ["Decoração", "Ervas mágicas ✅", "Horta comum", "Flores"], correct: 1 },
+    { q: "Colher ervas:", options: ["Com intenção ✅", "Qualquer", "Sem pensar", "À força"], correct: 0 },
+    { q: "Oferendas:", options: ["Para espíritos ✅", "Lixo", "Estragada", "Plástico"], correct: 0 },
+    { q: "Árvore sagrada:", options: ["Bananeira", "Carvalho ✅", "Artificial", "Bambu"], correct: 1 },
+    { q: "Energia telúrica:", options: ["Elétrica", "Da Terra ✅", "Nuclear", "Solar"], correct: 1 },
+    { q: "Conectar elementais:", options: ["Meditação, visualização e alinhamento energético ✅", "Internet e redes sociais", "Shopping", "Eletrônicos"], correct: 0 },
+    { q: "Pontos poder:", options: ["Energia concentrada ✅", "Tomadas", "Postes", "Prédios"], correct: 0 },
+    { q: "Importância Lua:", options: ["Ciclos energias ✅", "Ilumina", "Sem importância", "Máquinas"], correct: 0 },
+    { q: "Animais poder:", options: ["Fortes", "Guias espirituais ✅", "Pets", "Grandes"], correct: 1 },
+    { q: "Respeitar natureza:", options: ["Coletar consciente ✅", "Pegar tudo", "Não importar", "Destruir"], correct: 0 }
+  ]},
+
+  { id: 3, name: "Grimório & Altar", subtitle: "Ferramentas", color: "#c44569", cauldronColor: "#ff6b9d", bg: "linear-gradient(180deg, #4a1942 0%, #7d1e5c 50%, #5a1845 100%)", witchSprite: 2, questions: [
+    { q: "Grimório é:", options: ["Livro magia ✅", "Romance", "Diário", "Agenda"], correct: 0 },
+    { q: "Livro Sombras:", options: ["Feitiços experiências ✅", "Desenhos", "Fofocas", "Contas"], correct: 0 },
+    { q: "Começar grimório:", options: ["Consagrando ✅", "Qualquer", "Branco", "Rasgando"], correct: 0 },
+    { q: "Centro altar:", options: ["Divindade/intenção ✅", "Comida", "Eletrônicos", "Lixo"], correct: 0 },
+    { q: "Pentagrama:", options: ["Decoração", "5 elementos ✅", "Sorte", "Dinheiro"], correct: 1 },
+    { q: "Direção Terra:", options: ["Sul", "Norte ✅", "Leste", "Oeste"], correct: 1 },
+    { q: "Essencial altar:", options: ["4 elementos ✅", "TV", "Celular", "Computador"], correct: 0 },
+    { q: "Organizar:", options: ["Aleatório", "Por temas ✅", "Sem ordem", "Não organizar"], correct: 1 },
+    { q: "Altar ficar:", options: ["Local respeitado ✅", "Chão sujo", "Qualquer", "Escondido"], correct: 0 },
+    { q: "Registrar:", options: ["Datas", "Experiências ✅", "Nada", "Compras"], correct: 1 },
+    { q: "Cores altar:", options: ["Intenção ✅", "Moda", "Acaso", "Nada"], correct: 0 },
+    { q: "Ponta cima:", options: ["Espírito matéria ✅", "Mal", "Nada", "Confusão"], correct: 0 },
+    { q: "Proteger:", options: ["Cadeado", "Consagração ✅", "Nada", "Aberto"], correct: 1 },
+    { q: "Leste:", options: ["Ar ✅", "Fogo", "Água", "Terra"], correct: 0 },
+    { q: "Deve ser:", options: ["Pessoal único ✅", "Copiado", "Padrão", "Vazio"], correct: 0 }
+  ]},
+
+  { id: 4, name: "Cristais", subtitle: "Energia e Propósito", color: "#f9ca24", cauldronColor: "#f6e58d", bg: "linear-gradient(180deg, #d35400 0%, #f9ca24 50%, #e67e22 100%)", witchSprite: 3, questions: [
+    { q: "Quartzo rosa é usado para:", options: ["Amor ✅", "Proteção", "Dinheiro", "Estudo"], correct: 0 },
+    { q: "Ametista está ligada a:", options: ["Espiritualidade ✅", "Dinheiro", "Amor", "Proteção"], correct: 0 },
+    { q: "Obsidiana serve para:", options: ["Proteção ✅", "Amor", "Dinheiro", "Estudo"], correct: 0 },
+    { q: "Citrino é tradicionalmente usado para:", options: ["Prosperidade ✅", "Amor", "Sono", "Tristeza"], correct: 0 },
+    { q: "Cristal de água ajuda a:", options: ["Amplificar energia ✅", "Relaxar", "Dormir", "Nada"], correct: 0 },
+    { q: "Limpagem de cristais deve ser feita com:", options: ["Água, sal e lua ✅", "Água corrente", "Sol forte", "Vento"], correct: 0 },
+    { q: "Carregar cristal significa:", options: ["Energia concentrada ✅", "Deixar em prateleira", "Dormir com ele", "Mostrar"], correct: 0 },
+    { q: "Cristais azuis são associados a:", options: ["Comunicação ✅", "Paixão", "Energia física", "Riqueza"], correct: 0 },
+    { q: "Cristais verdes favorecem:", options: ["Cura ✅", "Amor", "Proteção", "Banimento"], correct: 0 },
+    { q: "Cianita é usada para:", options: ["Equilibrar energia ✅", "Dormir", "Energia sexual", "Banir"], correct: 0 },
+    { q: "Hematita ajuda a:", options: ["Aterramento ✅", "Flutuar", "Dormir", "Atacar"], correct: 0 },
+    { q: "Limpagem com fumaça é feita para:", options: ["Purificação ✅", "Afastar amigos", "Banimento", "Nada"], correct: 0 },
+    { q: "Cristais amarelos atraem:", options: ["Foco e clareza ✅", "Amor", "Felicidade", "Energia negativa"], correct: 0 },
+    { q: "Jaspe é associado a:", options: ["Força e proteção ✅", "Banimento", "Amor", "Sono"], correct: 0 },
+    { q: "Turquesa ajuda a:", options: ["Comunicação e equilíbrio ✅", "Dormir", "Medo", "Tristeza"], correct: 0 }
+  ]},
+
+  { id: 5, name: "Roda do Ano", subtitle: "Sabbats e Estações", color: "#ff7f50", cauldronColor: "#ffa07a", bg: "linear-gradient(180deg, #ff4500 0%, #ff7f50 50%, #ff6347 100%)", witchSprite: 4, questions: [
+    { q: "Samhain ocorre em:", options: ["31 de outubro ✅", "21 de junho", "1 de maio", "25 de dezembro"], correct: 0 },
+    { q: "Beltane simboliza:", options: ["Fertilidade ✅", "Fim do inverno", "Colheita", "Purificação"], correct: 0 },
+    { q: "Yule celebra:", options: ["Solstício de inverno ✅", "Equinócio de outono", "Fertilidade", "Colheita"], correct: 0 },
+    { q: "Litha corresponde:", options: ["Solstício de verão ✅", "Samhain", "Beltane", "Imbolc"], correct: 0 },
+    { q: "Imbolc está ligado a:", options: ["Purificação ✅", "Colheita", "Amor", "Fertilidade"], correct: 0 },
+    { q: "O equinócio de primavera:", options: ["Ostara ✅", "Mabon", "Samhain", "Yule"], correct: 0 },
+    { q: "Mabon ocorre:", options: ["Outono ✅", "Primavera", "Verão", "Inverno"], correct: 0 },
+    { q: "Ritos ciclo anual:", options: ["Conexão natureza ✅", "Aleatório", "Tecnologia", "Nada"], correct: 0 },
+    { q: "Cores primavera:", options: ["Verde e rosa ✅", "Preto e branco", "Vermelho e dourado", "Azul e cinza"], correct: 0 },
+    { q: "Cores outono:", options: ["Vermelho e laranja ✅", "Verde e rosa", "Azul e branco", "Rosa e lilás"], correct: 0 },
+    { q: "Sabbats principais:", options: ["8 festivais ✅", "5 festivais", "12 festivais", "4 festivais"], correct: 0 },
+    { q: "Ciclo lunar e solar:", options: ["Guia rituais ✅", "Não importa", "Só solar", "Só lunar"], correct: 0 },
+    { q: "Colheita final:", options: ["Mabon ✅", "Beltane", "Yule", "Imbolc"], correct: 0 },
+    { q: "Primavera simboliza:", options: ["Renovação ✅", "Fim", "Morte", "Banimento"], correct: 0 },
+    { q: "Solstício de verão:", options: ["Litha ✅", "Yule", "Samhain", "Ostara"], correct: 0 }
+  ]},
+
+  { id: 6, name: "Fases da Lua", subtitle: "Energia Lunar", color: "#1e90ff", cauldronColor: "#87cefa", bg: "linear-gradient(180deg, #0f52ba 0%, #1e90ff 50%, #5dade2 100%)", witchSprite: 5, questions: [
+    { q: "Lua nova é ideal para:", options: ["Novos começos ✅", "Colheita", "Banimento", "Proteção"], correct: 0 },
+    { q: "Lua crescente é usada para:", options: ["Atração e crescimento ✅", "Banimento", "Fim", "Equilíbrio"], correct: 0 },
+    { q: "Lua cheia favorece:", options: ["Poder máximo ✅", "Início", "Destruição", "Nada"], correct: 0 },
+    { q: "Lua minguante auxilia em:", options: ["Liberação ✅", "Aumento", "Energia alta", "Novo"], correct: 0 },
+    { q: "Energia lunar influencia:", options: ["Feitiços ✅", "Nada", "Apenas chuva", "Somente plantas"], correct: 0 },
+    { q: "Ritual lua cheia:", options: ["Amplificar intenção ✅", "Dormir", "Trabalhar", "Nada"], correct: 0 },
+    { q: "Ritual lua minguante:", options: ["Banir energias ✅", "Aumentar poder", "Dormir", "Nada"], correct: 0 },
+    { q: "Lua e emoção:", options: ["Fortalece sentimentos ✅", "Nada", "Diminui força", "Confunde"], correct: 0 },
+    { q: "Atração lua crescente:", options: ["Prosperidade ✅", "Rejeição", "Esquecimento", "Nada"], correct: 0 },
+    { q: "Fim lua cheia:", options: ["Liberação ✅", "Início", "Crescimento", "Dormir"], correct: 0 },
+    { q: "Energia mística:", options: ["Influência lunar ✅", "Solar", "Marítima", "Terrestre"], correct: 0 },
+    { q: "Ritual lua nova:", options: ["Novos projetos ✅", "Banimento", "Proteção", "Dormir"], correct: 0 },
+    { q: "Magia da lua:", options: ["Ajusta energia ✅", "Nada", "Confunde", "Destrói"], correct: 0 },
+    { q: "Fase ideal para purificação:", options: ["Minguante ✅", "Cheia", "Crescente", "Nova"], correct: 0 },
+    { q: "Ritual crescimento:", options: ["Crescente ✅", "Minguante", "Cheia", "Nova"], correct: 0 }
+  ]},
+
+  { id: 7, name: "Runas", subtitle: "Oráculos e Símbolos", color: "#8b0000", cauldronColor: "#ff4500", bg: "linear-gradient(180deg, #4b0000 0%, #8b0000 50%, #b22222 100%)", witchSprite: 6, questions: [
+    { q: "Runas vêm de:", options: ["Alfabeto antigo ✅", "China", "Egito", "Japão"], correct: 0 },
+    { q: "Fehu simboliza:", options: ["Riqueza ✅", "Amor", "Energia", "Proteção"], correct: 0 },
+    { q: "Raido é associado a:", options: ["Viagem e movimento ✅", "Dormir", "Banimento", "Energia"], correct: 0 },
+    { q: "Algiz indica:", options: ["Proteção ✅", "Ataque", "Fim", "Início"], correct: 0 },
+    { q: "Gebo representa:", options: ["Parceria ✅", "Riqueza", "Solidão", "Morte"], correct: 0 },
+    { q: "Runas são usadas para:", options: ["Oráculos ✅", "Decoração", "Nada", "Escrever"], correct: 0 },
+    { q: "Ansuz é símbolo de:", options: ["Comunicação ✅", "Força", "Cura", "Energia"], correct: 0 },
+    { q: "Hagalaz indica:", options: ["Transformação ✅", "Estabilidade", "Riqueza", "Amor"], correct: 0 },
+    { q: "Tiwaz é:", options: ["Justiça ✅", "Amor", "Tristeza", "Banimento"], correct: 0 },
+    { q: "Raidho é sobre:", options: ["Jornada ✅", "Parar", "Ficar", "Dormir"], correct: 0 },
+    { q: "Runas mágicas:", options: ["Carregar intenção ✅", "Nada", "Somente leitura", "Decoração"], correct: 0 },
+    { q: "Sowilo traz:", options: ["Vitória ✅", "Perda", "Sono", "Dormir"], correct: 0 },
+    { q: "Rune Uruz indica:", options: ["Força vital ✅", "Amor", "Tristeza", "Banimento"], correct: 0 },
+    { q: "Runas e magia:", options: ["Amplificam intenção ✅", "Decoração", "Nada", "Confusão"], correct: 0 },
+    { q: "Runas devem ser:", options: ["Respeitadas ✅", "Jogadas", "Ignoradas", "Quebradas"], correct: 0 }
+  ]},
+
+  { id: 8, name: "Ervas", subtitle: "Plantas Mágicas", color: "#228b22", cauldronColor: "#32cd32", bg: "linear-gradient(180deg, #0b3d0b 0%, #228b22 50%, #3cb371 100%)", witchSprite: 7, questions: [
+    { q: "Manjericão atrai:", options: ["Proteção e sorte ✅", "Tristeza", "Fome", "Sonhos"], correct: 0 },
+    { q: "Lavanda favorece:", options: ["Calma e sono ✅", "Energia", "Raiva", "Ataque"], correct: 0 },
+    { q: "Alecrim ajuda:", options: ["Proteção e memória ✅", "Dinheiro", "Amor", "Sono"], correct: 0 },
+    { q: "Ervas para amor:", options: ["Rosas, jasmim ✅", "Alecrim", "Manjericão", "Hortelã"], correct: 0 },
+    { q: "Ervas de banimento:", options: ["Sálvia, arruda ✅", "Lavanda", "Manjericão", "Tomilho"], correct: 0 },
+    { q: "Ervas são ativadas por:", options: ["Intenção ✅", "Sol", "Água", "Nada"], correct: 0 },
+    { q: "Infusão de ervas serve para:", options: ["Energia ✅", "Dormir", "Nada", "Cortar"], correct: 0 },
+    { q: "Secagem correta:", options: ["Seco e limpo ✅", "Molhado", "Queimado", "Não importa"], correct: 0 },
+    { q: "Ervas frescas:", options: ["Mais poder ✅", "Menos poder", "Igual", "Nada"], correct: 0 },
+    { q: "Arruda protege contra:", options: ["Negatividade ✅", "Amor", "Sono", "Tristeza"], correct: 0 },
+    { q: "Hortelã atrai:", options: ["Dinheiro e sorte ✅", "Energia ruim", "Dormir", "Morte"], correct: 0 },
+    { q: "Camomila ajuda em:", options: ["Calma e clarividência ✅", "Raiva", "Ataque", "Sono ruim"], correct: 0 },
+    { q: "Tomilho é usado para:", options: ["Coragem ✅", "Tristeza", "Amor", "Banimento"], correct: 0 },
+    { q: "Sálvia ajuda a:", options: ["Purificação ✅", "Amor", "Dormir", "Confusão"], correct: 0 },
+    { q: "Ervas e magia:", options: ["Amplificam intenção ✅", "Nada", "Confusão", "Decoração"], correct: 0 }
+  ]},
+
+  { id: 9, name: "Corpo Astral e Estados Alterados", subtitle: "Energia e Consciência", color: "#6a5acd", cauldronColor: "#9370db", bg: "linear-gradient(180deg, #3d2b56 0%, #6a5acd 50%, #7b68ee 100%)", witchSprite: 8, questions: [
+    { q: "Corpo astral é:", options: ["Corpo energético ✅", "Corpo físico", "Mental", "Imaginário"], correct: 0 },
+    { q: "Projeção astral requer:", options: ["Foco e prática ✅", "Sorte", "Comida", "Soneca"], correct: 0 },
+    { q: "Meditação profunda leva a:", options: ["Estados alterados ✅", "Nada", "Sono", "Confusão"], correct: 0 },
+    { q: "Chakras influenciam:", options: ["Energia corporal ✅", "Dinheiro", "Amor", "Dormir"], correct: 0 },
+    { q: "Respiração consciente ajuda:", options: ["Controle energia ✅", "Nada", "Sono", "Confusão"], correct: 0 },
+    { q: "Viagem astral é:", options: ["Exploração espiritual ✅", "Dormir", "Confusão", "Nada"], correct: 0 },
+    { q: "Projeção segura:", options: ["Proteção energética ✅", "Não importa", "Dormir", "Comer"], correct: 0 },
+    { q: "Estados alterados permitem:", options: ["Percepção ampliada ✅", "Menos percepção", "Nada", "Confusão"], correct: 0 },
+    { q: "Visualização é usada para:", options: ["Direcionar energia ✅", "Nada", "Confusão", "Dormir"], correct: 0 },
+    { q: "Afastamento de energia negativa:", options: ["Proteção astral ✅", "Dormir", "Nada", "Comer"], correct: 0 },
+    { q: "Sonhos lúcidos podem:", options: ["Treinar magia ✅", "Confundir", "Dormir", "Nada"], correct: 0 },
+    { q: "Meditação regular:", options: ["Fortalece consciência ✅", "Confunde", "Nada", "Atrasa"], correct: 0 },
+    { q: "A aura é:", options: ["Campo energético ✅", "Roupa", "Corpo físico", "Objeto"], correct: 0 },
+    { q: "Alinhamento energético ajuda a:", options: ["Magia eficaz ✅", "Nada", "Confusão", "Dormir"], correct: 0 },
+    { q: "Estados alterados exigem:", options: ["Disciplina e prática ✅", "Sorte", "Nada", "Comida"], correct: 0 }
+  ]},
+
+  { id: 10, name: "Magia Avançada", subtitle: "Rituais e Técnicas", color: "#9400d3", cauldronColor: "#ba55d3", bg: "linear-gradient(180deg, #4b0082 0%, #9400d3 50%, #8a2be2 100%)", witchSprite: 9, questions: [
+    { q: "Fase ideal para banimentos:", options: ["Lua minguante ✅", "Lua cheia", "Lua nova", "Lua crescente"], correct: 0 },
+    { q: "Colheita final dos Sabbats:", options: ["Mabon ✅", "Samhain", "Lammas", "Yule"], correct: 0 },
+    { q: "Elemento sul em círculos mágicos:", options: ["Fogo ✅", "Ar", "Água", "Terra"], correct: 0 },
+    { q: "Alecrim é usado para:", options: ["Proteção ✅", "Amor", "Sono", "Dinheiro"], correct: 0 },
+    { q: "Cor ligada à paixão:", options: ["Vermelha ✅", "Azul", "Amarela", "Verde"], correct: 0 },
+    { q: "Sândalo está ligado a:", options: ["Espiritualidade ✅", "Dinheiro", "Amor", "Energia"], correct: 0 },
+    { q: "Athame serve para:", options: ["Direcionar energia ✅", "Cortar fisicamente", "Decoração", "Nada"], correct: 0 },
+    { q: "Boline é usado para:", options: ["Cortar ervas ✅", "Cortar energia", "Decoração", "Nada"], correct: 0 },
+    { q: "Antes do ritual:", options: ["Purificação do espaço ✅", "Comer", "Dormir", "Nada"], correct: 0 },
+    { q: "Após o ritual:", options: ["Aterramento ✅", "Dormir", "Comer", "Nada"], correct: 0 },
+    { q: "Sigilo funciona quando:", options: ["Carregado com intenção ✅", "Apenas desenhado", "Guardado", "Mostrado"], correct: 0 },
+    { q: "Meditação na magia avançada:", options: ["Centraliza energia ✅", "Gastaria tempo", "Atrapalha", "Nada"], correct: 0 },
+    { q: "Ética envolve:", options: ["Não causar dano ✅", "Fazer o que quiser", "Só ajudar", "Não importa"], correct: 0 },
+    { q: "Retorno de energia:", options: ["Lei dos três ✅", "Não existe", "Só positivo", "Só negativo"], correct: 0 },
+    { q: "Magia funciona por:", options: ["Intenção e energia ✅", "Palavras mágicas", "Objetos", "Sorte"], correct: 0 }
+  ]}
+];
+
+
+    // --- State ---
+    let state = {
+      gameState: 'menu', // 'menu' | 'playing'
+      currentLevel: 1,
+      witchPos: { x: 200, y: 250 },
+      cauldrons: [],
+      currentQuestion: null,
+      score: 0,
+      answeredCauldrons: [],
+      wrongAnswer: false,
+      correctAnswer: false,
+      victory: false,
+      floatOffset: 0
+    };
+
+    // controls
+    const keysPressed = {};
+    let touchStart = null;
+
+    // DOM root
+    const app = document.getElementById('app');
+
+    // --- Helpers ---
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+    function dist(ax,ay,bx,by){ return Math.hypot(ax-bx, ay-by); }
+
+    // --- Sound (simple WebAudio cues) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let ambientGain=null;
+    (function startAmbient(){
+      try{
+        const g = audioCtx.createGain(); g.gain.value = 0.02;
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = 70;
+        const lfo = audioCtx.createOscillator();
+        lfo.frequency.value = 0.12;
+        const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 40;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        lfo.start();
+        ambientGain = g;
+      }catch(e){
+        console.warn('Audio disabled', e);
+      }
+    })();
+
+    function playPop(){
+      try{
+        const g = audioCtx.createGain(); g.gain.value = 0.2;
+        const o = audioCtx.createOscillator();
+        o.type = 'triangle';
+        o.frequency.value = 880;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start();
+        o.stop(audioCtx.currentTime + 0.08);
+      }catch(e){}
+    }
+    function playBoom(){
+      try{
+        const g = audioCtx.createGain(); g.gain.value = 0.25;
+        const o = audioCtx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = 120;
+        const env = audioCtx.createGain(); env.gain.value = 1;
+        o.connect(env);
+        env.connect(g);
+        g.connect(audioCtx.destination);
+        o.start();
+        env.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        o.stop(audioCtx.currentTime + 0.6);
+      }catch(e){}
+    }
+    function playWin(){
+      try{
+        const now = audioCtx.currentTime;
+        const notes=[880, 1100, 1320];
+        notes.forEach((f,i)=>{
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.frequency.value = f;
+          o.type = 'sine';
+          g.gain.value = 0.18;
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(now + i*0.12);
+          o.stop(now + i*0.12 + 0.18);
+        });
+      }catch(e){}
+    }
+
+    // --- Renderers ---
+    function makeMenu(){
+      app.innerHTML = '';
+      app.style.background = 'var(--menu-bg)';
+      const container = document.createElement('div');
+      container.className = 'menu-center';
+
+      const title = document.createElement('h1');
+      title.className = 'title';
+      title.style.fontSize = '28px';
+      title.textContent = 'A Bruxinha das Florestas';
+      container.appendChild(title);
+
+      const sub = document.createElement('p');
+      sub.className = 'subtitle';
+      sub.style.fontSize = '14px';
+      sub.textContent = 'Escolha seu nível!';
+      container.appendChild(sub);
+
+      const grid = document.createElement('div');
+      grid.className = 'levels-grid';
+
+      levels.forEach(l=>{
+        const btn = document.createElement('button');
+        btn.className = 'level-btn';
+        btn.style.background = l.color;
+        btn.style.boxShadow = `0 4px 15px ${l.color}66`;
+        btn.innerHTML = `<div style="font-size:14px">Nível ${l.id}</div>
+                         <div style="font-size:12px;font-weight:700;opacity:0.95">${l.name}</div>
+                         <div style="font-size:11px;opacity:0.85">${l.subtitle}</div>`;
+        btn.addEventListener('click', ()=>{
+          startGame(l.id);
+        });
+        grid.appendChild(btn);
+      });
+
+      container.appendChild(grid);
+
+      const hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.innerHTML = '📱 Celular: Arraste o dedo para mover<br>⌨️ PC: Use as setas ou WASD';
+      container.appendChild(hint);
+
+      app.appendChild(container);
+    }
+
+    // create game elements
+    let witchEl, hudEl, menuBtn;
+
+    function makeGame(){
+      app.innerHTML = '';
+      const lvl = levels.find(x=>x.id===state.currentLevel);
+      app.style.background = lvl.bg || 'black';
+
+      // HUD
+      hudEl = document.createElement('div');
+      hudEl.className = 'hud';
+      hudEl.innerHTML = `<div class="title">${lvl.name}</div>
+                         <div class="score">Pontuação: ${state.score}</div>
+                         <div class="cauld">Caldeirões: ${state.answeredCauldrons.length}/${lvl.questions.length}</div>`;
+      app.appendChild(hudEl);
+
+      // Menu button
+      menuBtn = document.createElement('button');
+      menuBtn.className = 'menu-btn';
+      menuBtn.textContent = 'Menu';
+      menuBtn.addEventListener('click', ()=>{
+        state.gameState = 'menu';
+        cleanupGameListeners();
+        render();
+      });
+      app.appendChild(menuBtn);
+
+      // Witch element
+      witchEl = document.createElement('div');
+      witchEl.className = 'witch';
+      witchEl.style.left = (state.witchPos.x - 80) + 'px';
+      witchEl.style.top = (state.witchPos.y - 80) + 'px';
+      const img = document.createElement('div');
+      img.className = 'img';
+      img.style.backgroundImage = `url(${witchImages[lvl.witchSprite]})`;
+      witchEl.appendChild(img);
+      app.appendChild(witchEl);
+
+      // Cauldrons container (we will create each cauldron)
+      state.cauldrons.forEach((c,i) => {
+        const el = document.createElement('div');
+        el.className = 'cauldron';
+        el.dataset.index = c.index;
+        el.style.left = (c.x - state.witchPos.x + window.innerWidth / 2) + 'px';
+        el.style.top = c.y + 'px';
+        el.innerHTML = !state.answeredCauldrons.includes(c.index) ? '🪄' : '<span style="opacity:0.3;font-size:28px">✓</span>';
+        // store reference
+        c._el = el;
+        app.appendChild(el);
+      });
+
+      // attach controls
+      attachGameListeners();
+    }
+
+    // --- Input & Game Loop ---
+    let rafId = null;
+    let lastTime = performance.now();
+
+    function attachGameListeners(){
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+      document.addEventListener('touchstart', onTouchStart, {passive:false});
+      document.addEventListener('touchmove', onTouchMove, {passive:false});
+      document.addEventListener('touchend', onTouchEnd, {passive:false});
+      // start loop
+      lastTime = performance.now();
+      rafId = requestAnimationFrame(gameLoop);
+    }
+
+    function cleanupGameListeners(){
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+      if(rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    function onKeyDown(e){ keysPressed[e.key] = true; }
+    function onKeyUp(e){ keysPressed[e.key] = false; }
+
+    function onTouchStart(e){
+      if(e.touches && e.touches[0]){
+        const t = e.touches[0];
+        touchStart = { x: t.clientX, y: t.clientY };
+      }
+    }
+    function onTouchMove(e){
+      if(!touchStart) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      const deltaX = t.clientX - touchStart.x;
+      const deltaY = t.clientY - touchStart.y;
+      if(!state.currentQuestion){
+        state.witchPos.x = clamp(state.witchPos.x + deltaX * 0.5, 0, window.innerWidth - 160);
+        state.witchPos.y = clamp(state.witchPos.y + deltaY * 0.5, 0, window.innerHeight - 160);
+      }
+      touchStart = { x: t.clientX, y: t.clientY };
+    }
+    function onTouchEnd(e){ touchStart = null; }
+
+    function gameLoop(now){
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      // float offset
+      state.floatOffset += dt * 3;
+
+      // keyboard movement if no question on
+      if(!state.currentQuestion){
+        const speed = 220 * dt; // px per sec scaled
+        if(keysPressed['ArrowLeft'] || keysPressed['a']) state.witchPos.x = clamp(state.witchPos.x - speed, 0, window.innerWidth - 160);
+        if(keysPressed['ArrowRight'] || keysPressed['d']) state.witchPos.x = clamp(state.witchPos.x + speed, 0, window.innerWidth - 160);
+        if(keysPressed['ArrowUp'] || keysPressed['w']) state.witchPos.y = clamp(state.witchPos.y - speed, 0, window.innerHeight - 160);
+        if(keysPressed['ArrowDown'] || keysPressed['s']) state.witchPos.y = clamp(state.witchPos.y + speed, 0, window.innerHeight - 160);
+      }
+
+      // update witch position in DOM
+      if(witchEl){
+        const floatY = Math.sin(state.floatOffset) * 6;
+        witchEl.style.left = (state.witchPos.x - 80) + 'px';
+        witchEl.style.top = (state.witchPos.y - 80 + floatY) + 'px';
+        // flip if moving left
+        const img = witchEl.querySelector('.img');
+        const flipping = (keysPressed['ArrowLeft'] || keysPressed['a']) ? -1 : 1;
+        img.style.transform = `scaleX(${flipping})`;
+      }
+
+      // update cauldrons positions relative to witch (simulate camera)
+      state.cauldrons.forEach(c => {
+        if(c._el){
+          c._el.style.left = (c.x - state.witchPos.x + window.innerWidth / 2) + 'px';
+          c._el.style.top = c.y + 'px';
+        }
+      });
+
+      // collision: check for nearby cauldron
+      if(state.gameState === 'playing' && !state.currentQuestion){
+        state.cauldrons.forEach(c=>{
+          if(!state.answeredCauldrons.includes(c.index)){
+            const d = dist(state.witchPos.x, state.witchPos.y, c.x, c.y);
+            if(d < 80){
+              // open question
+              state.currentQuestion = c;
+              renderQuestionOverlay(c);
+            }
+          }
+        });
+      }
+
+      // update HUD
+      if(hudEl){
+        hudEl.querySelector('.score').textContent = 'Pontuação: ' + state.score;
+        hudEl.querySelector('.cauld').textContent = `Caldeirões: ${state.answeredCauldrons.length}/${levels.find(l=>l.id===state.currentLevel).questions.length}`;
+      }
+
+      // victory check
+      const lvl = levels.find(l=>l.id===state.currentLevel);
+      if(state.answeredCauldrons.length === lvl.questions.length && lvl.questions.length>0 && !state.victory){
+        state.victory = true;
+        // show victory overlay
+        showVictory();
+      }
+
+      rafId = requestAnimationFrame(gameLoop);
+    }
+
+    // --- Game actions ---
+    function startGame(levelId){
+      state.currentLevel = levelId;
+      state.gameState = 'playing';
+      state.witchPos = { x: 200, y: 250 };
+      state.cauldrons = [];
+      state.answeredCauldrons = [];
+      state.score = 0;
+      state.victory = false;
+      state.currentQuestion = null;
+
+      const lvl = levels.find(l=>l.id===levelId);
+      // create cauldrons: positions spaced horizontally (you can tweak spacing)
+      state.cauldrons = lvl.questions.map((q,i)=>({
+        x: 400 + (i * 350),
+        y: 250 + (i % 2 === 0 ? 50 : -50),
+        question: q,
+        index: i
+      }));
+
+      render();
+      // ensure audio context resumes on user gesture
+      if(audioCtx && audioCtx.state === 'suspended'){
+        audioCtx.resume().catch(()=>{});
+      }
+    }
+
+    function render(){
+      if(state.gameState === 'menu') {
+        makeMenu();
+      } else if(state.gameState === 'playing'){
+        makeGame();
+      } else {
+        app.innerHTML='';
+      }
+    }
+
+    // --- Question overlay & handling ---
+    let overlayEl = null;
+    function renderQuestionOverlay(c){
+      // pause movement by leaving currentQuestion set
+      // create overlay DOM
+      overlayEl = document.createElement('div');
+      overlayEl.className = 'overlay';
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.background = levels.find(l=>l.id===state.currentLevel).color;
+      card.style.boxShadow = `0 0 50px ${levels.find(l=>l.id===state.currentLevel).cauldronColor}`;
+      const h = document.createElement('h2');
+      h.textContent = c.question.q;
+      card.appendChild(h);
+
+      const grid = document.createElement('div');
+      grid.className = 'options-grid';
+
+      c.question.options.forEach((opt, idx)=>{
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.textContent = opt;
+        btn.addEventListener('click', ()=>{
+          handleAnswer(idx);
+        });
+        grid.appendChild(btn);
+      });
+
+      card.appendChild(grid);
+      overlayEl.appendChild(card);
+      document.body.appendChild(overlayEl);
+    }
+
+    function closeOverlay(){
+      if(overlayEl){
+        overlayEl.remove();
+        overlayEl = null;
+      }
+    }
+
+    function handleAnswer(idx){
+      const c = state.currentQuestion;
+      if(!c) return;
+      const correct = (idx === c.question.correct);
+      if(correct){
+        state.correctAnswer = true;
+        state.score += 10;
+        playPop();
+        // feedback then close
+        showCorrect();
+        setTimeout(()=>{
+          state.correctAnswer = false;
+          state.answeredCauldrons.push(c.index);
+          // replace cauldron icon
+          if(c._el){
+            c._el.innerHTML = '<span style="opacity:0.3;font-size:28px">✓</span>';
+          }
+          state.currentQuestion = null;
+          closeOverlay();
+        }, 900);
+      } else {
+        state.wrongAnswer = true;
+        playBoom();
+        showWrong();
+        setTimeout(()=>{
+          state.wrongAnswer = false;
+          state.currentQuestion = null;
+          closeOverlay();
+        }, 1400);
+      }
+    }
+
+    // --- Feedback screens ---
+    function showWrong(){
+      const el = document.createElement('div');
+      el.className = 'feedback';
+      el.style.background = 'rgba(139,0,0,0.92)';
+      el.innerHTML = `<div style="text-align:center">
+        <div style="font-size:56px">💥</div>
+        <div style="font-size:32px;font-weight:800;margin-top:8px">GAME OVER</div>
+        <div style="margin-top:8px">A poção explodiu!</div>
+      </div>`;
+      document.body.appendChild(el);
+      setTimeout(()=> el.remove(), 1200);
+    }
+
+    function showCorrect(){
+      const el = document.createElement('div');
+      el.className = 'feedback';
+      el.style.background = 'rgba(0,80,0,0.8)';
+      el.innerHTML = `<div style="text-align:center">
+        <div style="font-size:56px">✨</div>
+        <div style="font-size:28px;font-weight:700;margin-top:6px">CORRETO!</div>
+        <div style="margin-top:6px">A poção está perfeita!</div>
+      </div>`;
+      document.body.appendChild(el);
+      setTimeout(()=> el.remove(), 900);
+    }
+
+    function showVictory(){
+      // play sound
+      playWin();
+      const el = document.createElement('div');
+      el.className = 'overlay';
+      el.style.background = 'rgba(8,0,16,0.9)';
+      const vc = document.createElement('div');
+      vc.className = 'victory-card';
+      vc.innerHTML = `<div style="text-align:center">
+        <div style="font-size:56px">🏆</div>
+        <div style="font-size:28px;font-weight:800;color:#ffd86b;margin-top:8px">VITÓRIA!</div>
+        <div style="margin-top:10px;color:#fff">Você completou o nível!</div>
+        <div style="margin-top:8px;color:#fff">Pontuação Final: <strong>${state.score}</strong></div>
+        <div style="margin-top:14px"><button id="backToMenuBtn" style="padding:10px 14px;border-radius:12px;border:none;font-weight:800;background:#ffd86b">Voltar ao Menu</button></div>
+      </div>`;
+      el.appendChild(vc);
+      document.body.appendChild(el);
+      document.getElementById('backToMenuBtn').addEventListener('click', ()=>{
+        // cleanup
+        state.gameState = 'menu';
+        state.victory = false;
+        document.body.removeChild(el);
+        cleanupGameListeners();
+        render();
+      });
+    }
+
+    // --- Init ---
+    render();
+
+    // handle window resize to clamp witch pos
+    window.addEventListener('resize', ()=>{
+      state.witchPos.x = clamp(state.witchPos.x, 0, window.innerWidth - 160);
+      state.witchPos.y = clamp(state.witchPos.y, 0, window.innerHeight - 160);
+    });
+
+    // quick resume audio on first touch/click (some browsers block autoplay)
+    function resumeAudioOnUserGesture(){
+      if(audioCtx && audioCtx.state === 'suspended'){
+        audioCtx.resume().catch(()=>{});
+      }
+      window.removeEventListener('pointerdown', resumeAudioOnUserGesture);
+      window.removeEventListener('touchstart', resumeAudioOnUserGesture);
+    }
+    window.addEventListener('pointerdown', resumeAudioOnUserGesture);
+    window.addEventListener('touchstart', resumeAudioOnUserGesture);
+
+    // make sure long-press doesn't zoom on iOS double tap
+    let lastTap = 0;
+    window.addEventListener('touchend', function(e){
+      const now = Date.now();
+      if(now - lastTap <= 300) e.preventDefault();
+      lastTap = now;
+    }, {passive:false});
+
+  })();
+  </script>
+</body>
+</html>
