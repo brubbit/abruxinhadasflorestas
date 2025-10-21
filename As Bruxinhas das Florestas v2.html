@@ -772,7 +772,7 @@
       const el = document.createElement("div");
       el.className = "cauldron";
       el.dataset.index = c.index;
-      el.style.left = c.x - state.witchPos.x + window.innerWidth / 2 + "px";
+      el.style.left = c.x + "px";
       el.style.top = c.y + "px";
 
       if (!state.answeredCauldrons.includes(c.index)) {
@@ -880,7 +880,7 @@
     // Atualiza posição dos caldeirões
     state.cauldrons.forEach((c) => {
       if (c._el) {
-        c._el.style.left = c.x - state.witchPos.x + window.innerWidth / 2 + "px";
+        c._el.style.left = c.x + "px";
         c._el.style.top = c.y + "px";
       }
     });
