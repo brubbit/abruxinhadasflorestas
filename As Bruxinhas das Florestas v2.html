@@ -46,8 +46,8 @@
       }
 
       .menu-hero {
-        width: min(240px, 55vw);
-        max-width: 280px;
+        width: min(280px, 60vw);
+        max-width: 320px;
         margin-bottom: 18px;
         filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
       }
@@ -57,21 +57,6 @@
         height: auto;
         display: block;
         image-rendering: pixelated;
-        animation: menuHeroFloat 4.5s ease-in-out infinite;
-      }
-
-      @keyframes menuHeroFloat {
-        0% {
-          transform: translateY(0);
-        }
-
-        50% {
-          transform: translateY(-14px);
-        }
-
-        100% {
-          transform: translateY(0);
-        }
       }
 
       .title {
@@ -288,12 +273,8 @@
           gap: 10px;
         }
 
-        .levels-grid .level-btn:nth-child(10) {
-          grid-column: auto;
-        }
-
         .menu-hero {
-          width: min(200px, 65vw);
+          width: min(220px, 70vw);
           margin-bottom: 16px;
         }
 
@@ -324,100 +305,6 @@
     <script>
   (function () {
   const menuHeroImage = "https://i.ibb.co/8mbGvyW/bruxinha-flutuando.gif";
-  const ambientMusicVideoId = "s0mx_YrjY58";
-  const ambientMusicVolume = 12;
-  let ambientPlayer = null;
-  let ambientPlayerReady = false;
-  let ambientPlayQueued = false;
-  let audioUnlockListenersActive = true;
-
-  function ensureAmbientMusicContainer() {
-    if (document.getElementById("ambient-music-player")) return;
-    const holder = document.createElement("div");
-    holder.id = "ambient-music-player";
-    holder.style.position = "fixed";
-    holder.style.width = "1px";
-    holder.style.height = "1px";
-    holder.style.opacity = "0.01";
-    holder.style.pointerEvents = "none";
-    holder.style.zIndex = "-1";
-    holder.setAttribute("aria-hidden", "true");
-    if (document.body) {
-      document.body.appendChild(holder);
-    } else {
-      document.addEventListener(
-        "DOMContentLoaded",
-        () => {
-          if (!document.getElementById("ambient-music-player")) {
-            document.body.appendChild(holder);
-          }
-        },
-        { once: true }
-      );
-    }
-  }
-
-  function loadYouTubeAPI() {
-    if (document.getElementById("youtube-iframe-api")) return;
-    const script = document.createElement("script");
-    script.id = "youtube-iframe-api";
-    script.src = "https://www.youtube.com/iframe_api";
-    script.async = true;
-    document.head.appendChild(script);
-  }
-
-  function tryStartAmbient() {
-    if (!ambientPlayer || !ambientPlayerReady) {
-      ambientPlayQueued = true;
-      return;
-    }
-    ambientPlayQueued = false;
-    ambientPlayer.setVolume(ambientMusicVolume);
-    if (typeof ambientPlayer.unMute === "function") ambientPlayer.unMute();
-    ambientPlayer.playVideo();
-  }
-
-  function detachAudioUnlockers() {
-    if (!audioUnlockListenersActive) return;
-    window.removeEventListener("pointerdown", resumeAudio);
-    window.removeEventListener("touchstart", resumeAudio);
-    audioUnlockListenersActive = false;
-  }
-
-  loadYouTubeAPI();
-
-  window.onYouTubeIframeAPIReady = function () {
-    ensureAmbientMusicContainer();
-    ambientPlayer = new YT.Player("ambient-music-player", {
-      height: "1",
-      width: "1",
-      videoId: ambientMusicVideoId,
-      playerVars: {
-        autoplay: 0,
-        controls: 0,
-        disablekb: 1,
-        loop: 1,
-        modestbranding: 1,
-        playsinline: 1,
-        playlist: ambientMusicVideoId
-      },
-      events: {
-        onReady: function (event) {
-          ambientPlayerReady = true;
-          event.target.setVolume(ambientMusicVolume);
-          if (ambientPlayQueued) tryStartAmbient();
-        },
-        onStateChange: function (event) {
-          if (event.data === YT.PlayerState.PLAYING) {
-            event.target.setVolume(ambientMusicVolume);
-            detachAudioUnlockers();
-          } else if (event.data === YT.PlayerState.ENDED) {
-            event.target.playVideo();
-          }
-        }
-      }
-    });
-  };
   const witchImages = [
     "https://i.postimg.cc/XNQdg2SZ/brubruxinha.png",
     "https://i.postimg.cc/nV0B1dbH/2.png",
