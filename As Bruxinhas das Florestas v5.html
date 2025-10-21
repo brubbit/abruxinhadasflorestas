@@ -45,11 +45,25 @@
         box-sizing: border-box;
       }
 
+      @keyframes hero-float {
+        0% {
+          transform: translateY(-8px);
+        }
+        50% {
+          transform: translateY(8px);
+        }
+        100% {
+          transform: translateY(-8px);
+        }
+      }
+
       .menu-hero {
-        width: min(280px, 60vw);
-        max-width: 320px;
-        margin-bottom: 18px;
+        width: min(210px, 48vw);
+        max-width: 240px;
+        margin-bottom: 10px;
         filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
+        animation: hero-float 4.8s ease-in-out infinite;
+        will-change: transform;
       }
 
       .menu-hero img {
@@ -64,7 +78,7 @@
         color: #d4af37;
         font-family: serif;
         text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-        margin: 0 0 8px 0;
+        margin: 0 0 6px 0;
         font-weight: 700;
       }
 
@@ -267,6 +281,16 @@
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
       }
 
+      #ambient-player {
+        position: fixed;
+        width: 1px;
+        height: 1px;
+        left: -9999px;
+        top: -9999px;
+        pointer-events: none;
+        opacity: 0;
+      }
+
       @media (max-width: 520px) {
         .levels-grid {
           grid-template-columns: repeat(2, 1fr);
@@ -274,8 +298,8 @@
         }
 
         .menu-hero {
-          width: min(220px, 70vw);
-          margin-bottom: 16px;
+          width: min(180px, 70vw);
+          margin-bottom: 8px;
         }
 
         .witch {
@@ -583,6 +607,30 @@
     }
   ];
 
+  function shuffleArray(arr) {
+    const result = arr.slice();
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
+  function prepareQuestion(q) {
+    const withFlags = q.options.map((text, idx) => ({
+      text,
+      isCorrect: idx === q.correct
+    }));
+    const shuffled = shuffleArray(withFlags);
+    const correctIndex = shuffled.findIndex((opt) => opt.isCorrect);
+
+    return {
+      ...q,
+      options: shuffled.map((opt) => opt.text),
+      correct: correctIndex
+    };
+  }
+
   // ---------- ESTADO INICIAL DO JOGO ----------
   let state = {
     gameState: "menu",
@@ -695,6 +743,55 @@
     } catch (e) {}
   }
 
+  // ---------- MÚSICA AMBIENTE ----------
+  let ambientScriptLoaded = false;
+  let ambientPlayer = null;
+  let ambientStartRequested = false;
+
+  function ensureAmbientPlayer() {
+    if (ambientScriptLoaded) return;
+    ambientScriptLoaded = true;
+
+    const placeholder = document.createElement("div");
+    placeholder.id = "ambient-player";
+    document.body.appendChild(placeholder);
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+  }
+
+  window.onYouTubeIframeAPIReady = function () {
+    ambientPlayer = new YT.Player("ambient-player", {
+      videoId: "s0mx_YrjY58",
+      playerVars: {
+        autoplay: 0,
+        controls: 0,
+        loop: 1,
+        playlist: "s0mx_YrjY58",
+        playsinline: 1,
+        modestbranding: 1,
+        rel: 0
+      },
+      events: {
+        onReady: (event) => {
+          event.target.setVolume(15);
+          if (ambientStartRequested) {
+            event.target.playVideo();
+          }
+        }
+      }
+    });
+  };
+
+  function tryStartAmbient() {
+    ensureAmbientPlayer();
+    ambientStartRequested = true;
+    if (ambientPlayer && typeof ambientPlayer.playVideo === "function") {
+      ambientPlayer.playVideo();
+    }
+  }
+
   // ---------- TELA DE MENU ----------
   function makeMenu() {
     app.innerHTML = "";
@@ -713,13 +810,14 @@
 
     const title = document.createElement("h1");
     title.className = "title";
-    title.style.fontSize = "28px";
+    title.style.fontSize = "38px";
     title.textContent = "As Bruxinhas das Florestas";
     container.appendChild(title);
 
     const sub = document.createElement("p");
     sub.className = "subtitle";
-    sub.style.fontSize = "14px";
+    sub.style.fontSize = "13px";
+    sub.style.marginTop = "2px";
     sub.textContent = "Escolha seu nível!";
     container.appendChild(sub);
 
@@ -965,7 +1063,10 @@
 
     const lvl = levels.find(l => l.id === levelId);
     const layout = computeCauldronLayout(lvl);
-    state.cauldrons = layout.cauldrons;
+    state.cauldrons = layout.cauldrons.map((c) => ({
+      ...c,
+      question: prepareQuestion(c.question)
+    }));
 
     const baseY = layout.marginY + (layout.rows - 1) * layout.rowSpacing;
     state.witchPos = {
@@ -1121,6 +1222,7 @@
 
   // ---------- INICIALIZAÇÃO ----------
   render();
+  ensureAmbientPlayer();
 
   window.addEventListener("resize", () => {
     state.witchPos.x = clamp(state.witchPos.x, 0, window.innerWidth - 160);
