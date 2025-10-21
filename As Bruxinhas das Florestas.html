@@ -577,6 +577,34 @@
   let touchStart = null;
   const app = document.getElementById("app");
 
+  function computeCauldronLayout(lvl) {
+    const cols = Math.min(5, Math.max(1, Math.ceil(lvl.questions.length / 3)));
+    const rows = Math.ceil(lvl.questions.length / cols);
+    const marginX = Math.max(100, Math.min(220, window.innerWidth * 0.18));
+    const marginY = Math.max(120, Math.min(260, window.innerHeight * 0.22));
+    const availableWidth = Math.max(window.innerWidth - marginX * 2, 0);
+    const availableHeight = Math.max(window.innerHeight - marginY * 2, 0);
+    const colSpacing = cols > 1 ? availableWidth / (cols - 1) : 0;
+    const rowSpacing = rows > 1 ? availableHeight / (rows - 1) : 0;
+
+    return {
+      cols,
+      rows,
+      marginY,
+      rowSpacing,
+      cauldrons: lvl.questions.map((q, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        return {
+          x: marginX + col * colSpacing,
+          y: marginY + row * rowSpacing,
+          question: q,
+          index: i
+        };
+      })
+    };
+  }
+
   // ---------- FUNÇÕES AUXILIARES ----------
   function clamp(v, a, b) {
     return Math.max(a, Math.min(b, v));
@@ -887,7 +915,6 @@
   function startGame(levelId) {
     state.currentLevel = levelId;
     state.gameState = "playing";
-    state.witchPos = { x: 200, y: 250 };
     state.cauldrons = [];
     state.answeredCauldrons = [];
     state.score = 0;
@@ -895,12 +922,14 @@
     state.currentQuestion = null;
 
     const lvl = levels.find(l => l.id === levelId);
-    state.cauldrons = lvl.questions.map((q, i) => ({
-      x: 400 + i * 350,
-      y: 250 + (i % 2 === 0 ? 50 : -50),
-      question: q,
-      index: i
-    }));
+    const layout = computeCauldronLayout(lvl);
+    state.cauldrons = layout.cauldrons;
+
+    const baseY = layout.marginY + (layout.rows - 1) * layout.rowSpacing;
+    state.witchPos = {
+      x: window.innerWidth / 2,
+      y: clamp(baseY + 120, 120, window.innerHeight - 160)
+    };
 
     render();
 
@@ -1054,6 +1083,16 @@
   window.addEventListener("resize", () => {
     state.witchPos.x = clamp(state.witchPos.x, 0, window.innerWidth - 160);
     state.witchPos.y = clamp(state.witchPos.y, 0, window.innerHeight - 160);
+
+    if (state.gameState === "playing") {
+      const lvl = levels.find(l => l.id === state.currentLevel);
+      const layout = computeCauldronLayout(lvl);
+      state.cauldrons = state.cauldrons.map((c, i) => ({
+        ...c,
+        x: layout.cauldrons[i].x,
+        y: layout.cauldrons[i].y
+      }));
+    }
   });
 
   function resumeAudio() {
