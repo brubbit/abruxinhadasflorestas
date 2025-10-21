@@ -45,6 +45,20 @@
         box-sizing: border-box;
       }
 
+      .menu-hero {
+        width: min(280px, 60vw);
+        max-width: 320px;
+        margin-bottom: 18px;
+        filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
+      }
+
+      .menu-hero img {
+        width: 100%;
+        height: auto;
+        display: block;
+        image-rendering: pixelated;
+      }
+
       .title {
         text-align: center;
         color: #d4af37;
@@ -254,6 +268,11 @@
           gap: 10px;
         }
 
+        .menu-hero {
+          width: min(220px, 70vw);
+          margin-bottom: 16px;
+        }
+
         .witch {
           width: 140px;
           height: 140px;
@@ -279,7 +298,8 @@
     <div id="app" class="screen"></div>
 
     <script>
-      (function () {
+  (function () {
+  const menuHeroImage = "https://i.ibb.co/8mbGvyW/bruxinha-flutuando.gif";
   const witchImages = [
     "https://i.postimg.cc/XNQdg2SZ/brubruxinha.png",
     "https://i.postimg.cc/nV0B1dbH/2.png",
@@ -681,6 +701,11 @@
     const container = document.createElement("div");
     container.className = "menu-center";
 
+    const hero = document.createElement("div");
+    hero.className = "menu-hero";
+    hero.innerHTML = `<img src="${menuHeroImage}" alt="Bruxinha flutuando" />`;
+    container.appendChild(hero);
+
     const title = document.createElement("h1");
     title.className = "title";
     title.style.fontSize = "28px";
@@ -886,16 +911,25 @@
     });
 
     // Detecta colisão com caldeirão
-    if (state.gameState === "playing" && !state.currentQuestion) {
-      state.cauldrons.forEach((c) => {
-        if (!state.answeredCauldrons.includes(c.index)) {
-          const d = dist(state.witchPos.x, state.witchPos.y, c.x, c.y);
-          if (d < 50) {
-            state.currentQuestion = c;
-            renderQuestionOverlay(c);
-          }
+    if (state.gameState === "playing" && !state.currentQuestion && witchEl) {
+      const witchRect = witchEl.getBoundingClientRect();
+      const witchCenterX = witchRect.left + witchRect.width / 2;
+      const witchCenterY = witchRect.top + witchRect.height / 2;
+
+      for (const c of state.cauldrons) {
+        if (state.answeredCauldrons.includes(c.index) || !c._el) continue;
+
+        const rect = c._el.getBoundingClientRect();
+        const cauldronCenterX = rect.left + rect.width / 2;
+        const cauldronCenterY = rect.top + rect.height / 2;
+        const triggerRadius = Math.max(rect.width, rect.height) * 0.6;
+
+        if (dist(witchCenterX, witchCenterY, cauldronCenterX, cauldronCenterY) < triggerRadius) {
+          state.currentQuestion = c;
+          renderQuestionOverlay(c);
+          break;
         }
-      });
+      }
     }
 
     // Atualiza HUD
