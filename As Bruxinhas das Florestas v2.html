@@ -45,6 +45,20 @@
         box-sizing: border-box;
       }
 
+      .menu-hero {
+        width: min(280px, 60vw);
+        max-width: 320px;
+        margin-bottom: 18px;
+        filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
+      }
+
+      .menu-hero img {
+        width: 100%;
+        height: auto;
+        display: block;
+        image-rendering: pixelated;
+      }
+
       .title {
         text-align: center;
         color: #d4af37;
@@ -254,6 +268,11 @@
           gap: 10px;
         }
 
+        .menu-hero {
+          width: min(220px, 70vw);
+          margin-bottom: 16px;
+        }
+
         .witch {
           width: 140px;
           height: 140px;
@@ -279,7 +298,102 @@
     <div id="app" class="screen"></div>
 
     <script>
-      (function () {
+  (function () {
+  const menuHeroImage = "https://i.ibb.co/8mbGvyW/bruxinha-flutuando.gif";
+  const ambientMusicVideoId = "s0mx_YrjY58";
+  const ambientMusicVolume = 12;
+  let ambientPlayer = null;
+  let ambientPlayerReady = false;
+  let ambientPlayQueued = false;
+  let audioUnlockListenersActive = true;
+
+  function ensureAmbientMusicContainer() {
+    if (document.getElementById("ambient-music-player")) return;
+    const holder = document.createElement("div");
+    holder.id = "ambient-music-player";
+    holder.style.position = "fixed";
+    holder.style.width = "1px";
+    holder.style.height = "1px";
+    holder.style.opacity = "0.01";
+    holder.style.pointerEvents = "none";
+    holder.style.zIndex = "-1";
+    holder.setAttribute("aria-hidden", "true");
+    if (document.body) {
+      document.body.appendChild(holder);
+    } else {
+      document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+          if (!document.getElementById("ambient-music-player")) {
+            document.body.appendChild(holder);
+          }
+        },
+        { once: true }
+      );
+    }
+  }
+
+  function loadYouTubeAPI() {
+    if (document.getElementById("youtube-iframe-api")) return;
+    const script = document.createElement("script");
+    script.id = "youtube-iframe-api";
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    document.head.appendChild(script);
+  }
+
+  function tryStartAmbient() {
+    if (!ambientPlayer || !ambientPlayerReady) {
+      ambientPlayQueued = true;
+      return;
+    }
+    ambientPlayQueued = false;
+    ambientPlayer.setVolume(ambientMusicVolume);
+    if (typeof ambientPlayer.unMute === "function") ambientPlayer.unMute();
+    ambientPlayer.playVideo();
+  }
+
+  function detachAudioUnlockers() {
+    if (!audioUnlockListenersActive) return;
+    window.removeEventListener("pointerdown", resumeAudio);
+    window.removeEventListener("touchstart", resumeAudio);
+    audioUnlockListenersActive = false;
+  }
+
+  loadYouTubeAPI();
+
+  window.onYouTubeIframeAPIReady = function () {
+    ensureAmbientMusicContainer();
+    ambientPlayer = new YT.Player("ambient-music-player", {
+      height: "1",
+      width: "1",
+      videoId: ambientMusicVideoId,
+      playerVars: {
+        autoplay: 0,
+        controls: 0,
+        disablekb: 1,
+        loop: 1,
+        modestbranding: 1,
+        playsinline: 1,
+        playlist: ambientMusicVideoId
+      },
+      events: {
+        onReady: function (event) {
+          ambientPlayerReady = true;
+          event.target.setVolume(ambientMusicVolume);
+          if (ambientPlayQueued) tryStartAmbient();
+        },
+        onStateChange: function (event) {
+          if (event.data === YT.PlayerState.PLAYING) {
+            event.target.setVolume(ambientMusicVolume);
+            detachAudioUnlockers();
+          } else if (event.data === YT.PlayerState.ENDED) {
+            event.target.playVideo();
+          }
+        }
+      }
+    });
+  };
   const witchImages = [
     "https://i.postimg.cc/XNQdg2SZ/brubruxinha.png",
     "https://i.postimg.cc/nV0B1dbH/2.png",
@@ -681,6 +795,11 @@
     const container = document.createElement("div");
     container.className = "menu-center";
 
+    const hero = document.createElement("div");
+    hero.className = "menu-hero";
+    hero.innerHTML = `<img src="${menuHeroImage}" alt="Bruxinha flutuando" />`;
+    container.appendChild(hero);
+
     const title = document.createElement("h1");
     title.className = "title";
     title.style.fontSize = "28px";
@@ -772,7 +891,7 @@
       const el = document.createElement("div");
       el.className = "cauldron";
       el.dataset.index = c.index;
-      el.style.left = c.x - state.witchPos.x + window.innerWidth / 2 + "px";
+      el.style.left = c.x + "px";
       el.style.top = c.y + "px";
 
       if (!state.answeredCauldrons.includes(c.index)) {
@@ -880,22 +999,31 @@
     // Atualiza posição dos caldeirões
     state.cauldrons.forEach((c) => {
       if (c._el) {
-        c._el.style.left = c.x - state.witchPos.x + window.innerWidth / 2 + "px";
+        c._el.style.left = c.x + "px";
         c._el.style.top = c.y + "px";
       }
     });
 
     // Detecta colisão com caldeirão
-    if (state.gameState === "playing" && !state.currentQuestion) {
-      state.cauldrons.forEach((c) => {
-        if (!state.answeredCauldrons.includes(c.index)) {
-          const d = dist(state.witchPos.x, state.witchPos.y, c.x, c.y);
-          if (d < 50) {
-            state.currentQuestion = c;
-            renderQuestionOverlay(c);
-          }
+    if (state.gameState === "playing" && !state.currentQuestion && witchEl) {
+      const witchRect = witchEl.getBoundingClientRect();
+      const witchCenterX = witchRect.left + witchRect.width / 2;
+      const witchCenterY = witchRect.top + witchRect.height / 2;
+
+      for (const c of state.cauldrons) {
+        if (state.answeredCauldrons.includes(c.index) || !c._el) continue;
+
+        const rect = c._el.getBoundingClientRect();
+        const cauldronCenterX = rect.left + rect.width / 2;
+        const cauldronCenterY = rect.top + rect.height / 2;
+        const triggerRadius = Math.max(rect.width, rect.height) * 0.6;
+
+        if (dist(witchCenterX, witchCenterY, cauldronCenterX, cauldronCenterY) < triggerRadius) {
+          state.currentQuestion = c;
+          renderQuestionOverlay(c);
+          break;
         }
-      });
+      }
     }
 
     // Atualiza HUD
@@ -1102,8 +1230,7 @@
     if (audioCtx && audioCtx.state === "suspended") {
       audioCtx.resume().catch(() => {});
     }
-    window.removeEventListener("pointerdown", resumeAudio);
-    window.removeEventListener("touchstart", resumeAudio);
+    tryStartAmbient();
   }
 
   window.addEventListener("pointerdown", resumeAudio);
